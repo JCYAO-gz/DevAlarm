@@ -3,6 +3,8 @@
 常驻桌面的圆形倒计时闹钟。程序员长期坐着办公，损伤腰部，需要定时提醒 坐-站立-走动
 蓝色科技风圆环随剩余时间缩短，中央显示当前事件与总时长；到点后整个圆环左右摇晃、向外发光并循环响铃，点击圆环即可结束提醒并进入下一事件。
 
+![DevAlarm 效果图：运行中、已暂停与提醒三种状态](assets/showcase.png)
+
 ## 使用
 
 1. 双击 `DevAlarm.exe` 启动，圆环默认出现在主屏幕底部居中。
@@ -63,6 +65,7 @@ python -m unittest discover -s tests   # 运行测试
 python tools/preview.py        # 生成渲染预览图到 preview/
 python tools/make_icon.py      # 重新生成图标
 python tools/make_sound.py     # 重新生成铃声
+python tools/make_showcase.py  # 重新生成 README 效果图 assets/showcase.png
 
 pip install pyinstaller
 python tools/build_exe.py      # 打包 dist/DevAlarm-V1.1-win64.exe
