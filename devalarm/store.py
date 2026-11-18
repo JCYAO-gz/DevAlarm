@@ -47,6 +47,7 @@ class Config:
     scale: float = 1.0
     window_pos: tuple[int, int] | None = None
     theme: str = DEFAULT_THEME_KEY
+    autostart: bool = True
 
 
 def parse_events(raw: Any) -> list[Event]:
@@ -122,6 +123,13 @@ def _clamp_alert(value: Any) -> int:
     return min(MAX_ALERT_SECONDS, max(MIN_ALERT_SECONDS, seconds))
 
 
+def _parse_bool(raw: Any, default: bool) -> bool:
+    """JSON 布尔容错：缺省或类型不对时用默认值。"""
+    if isinstance(raw, bool):
+        return raw
+    return default
+
+
 def _parse_pos(raw: Any) -> tuple[int, int] | None:
     if (
         isinstance(raw, (list, tuple))
@@ -159,6 +167,7 @@ def load_config(path: Path | None = None) -> Config:
             scale=_clamp_scale(data.get("scale", 1.0)),
             window_pos=_parse_pos(data.get("window")),
             theme=_parse_theme(data.get("theme")),
+            autostart=_parse_bool(data.get("autostart"), True),
         )
         if _is_legacy_defaults(config.events):
             config.events = list(DEFAULT_EVENTS)
@@ -194,6 +203,7 @@ def save_config(config: Config, path: Path | None = None) -> None:
         "scale": round(_clamp_scale(config.scale), 2),
         "window": list(config.window_pos) if config.window_pos else None,
         "theme": _parse_theme(config.theme),
+        "autostart": bool(config.autostart),
     }
     payload = json.dumps(data, ensure_ascii=False, indent=2)
     fd, tmp_name = tempfile.mkstemp(

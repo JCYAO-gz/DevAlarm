@@ -25,6 +25,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(config.scale, 1.0)
         self.assertEqual(config.theme, DEFAULT_THEME_KEY)
         self.assertIsNone(config.window_pos)
+        self.assertTrue(config.autostart)
 
     def test_roundtrip(self) -> None:
         config = Config(
@@ -48,6 +49,26 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(data["version"], 1)
         self.assertEqual(data["events"][0]["kind"], "interval")
         self.assertEqual(data["events"][0]["uid"], "a1")
+
+    def test_autostart_roundtrip(self) -> None:
+        config = Config(autostart=False)
+        save_config(config, self.path)
+        self.assertFalse(load_config(self.path).autostart)
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        self.assertIs(data["autostart"], False)
+
+    def test_autostart_invalid_value_falls_back_to_true(self) -> None:
+        self.path.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "events": [{"name": "坐", "seconds": 60}],
+                    "autostart": "no",
+                }
+            ),
+            encoding="utf-8",
+        )
+        self.assertTrue(load_config(self.path).autostart)
 
     def test_legacy_defaults_are_upgraded_and_persisted(self) -> None:
         self.path.write_text(

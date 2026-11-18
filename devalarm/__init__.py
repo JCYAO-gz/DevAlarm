@@ -7,14 +7,14 @@ from pathlib import Path
 
 APP_NAME = "DevAlarm"
 APP_TITLE = "DevAlarm 程序员闹钟"
-__version__ = "1.0"
+__version__ = "1.1"
 APP_VERSION = f"V{__version__}"
 APP_AUTHOR = "JCYAO"
 APP_DESCRIPTION = (
     "一个常驻桌面的圆形倒计时闹钟：蓝色科技圆环随剩余时间缩短，"
     "中央显示当前事件与总时长。到点后窗口左右摇晃、发光并循环响铃，"
-    "点击圆环立即进入下一事件。支持多事件循环、拖拽移动、左右下角缩放，"
-    "事件与提醒时长可在设置中修改并自动保存。"
+    "点击圆环立即进入下一事件。支持多事件循环、暂停、拖拽移动、左右下角缩放，"
+    "事件、提醒时长与开机自启动可在设置中修改并自动保存。"
 )
 
 __author__ = APP_AUTHOR

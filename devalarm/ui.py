@@ -25,7 +25,7 @@ from . import (
     ICON_FILE,
     SOUND_FILE,
 )
-from . import geometry
+from . import autostart, geometry
 from .core import (
     MAX_ALERT_SECONDS,
     MAX_EVENT_SECONDS,
@@ -181,6 +181,7 @@ class ConfigDialog(tk.Toplevel):
         events,
         alert_seconds: int,
         theme: str,
+        autostart_enabled: bool,
         anchor: tuple[int, int, int, int] | None,
         on_save,
         on_cancel,
@@ -229,6 +230,7 @@ class ConfigDialog(tk.Toplevel):
         self._reminder_var = tk.StringVar()
         self._alert_var = tk.StringVar(value=str(alert_seconds))
         self._theme_var = tk.StringVar(value=theme)
+        self._autostart_var = tk.BooleanVar(value=bool(autostart_enabled))
         for var in (self._name_var, self._minutes_var, self._reminder_var):
             var.trace_add("write", self._on_field_changed)
 
@@ -620,6 +622,30 @@ class ConfigDialog(tk.Toplevel):
             wraplength=720,
         ).pack(anchor="w", pady=(0, 12))
 
+        start_box = tk.Frame(content, bg=DLG_BG)
+        start_box.pack(fill="x", pady=(0, 10))
+        tk.Checkbutton(
+            start_box,
+            text="开机自动启动（登录 Windows 后自动运行）",
+            variable=self._autostart_var,
+            bg=DLG_BG,
+            fg=DLG_FG,
+            activebackground=DLG_BG,
+            activeforeground=DLG_FG,
+            selectcolor=DLG_FIELD,
+            font=UI_FONT,
+            anchor="w",
+            cursor="hand2",
+            highlightthickness=0,
+            bd=0,
+        ).pack(anchor="w")
+        self._label(
+            start_box,
+            "默认开启；取消勾选并保存后会删除开机启动项。",
+            fg=DLG_MUTED,
+            font=UI_FONT_SMALL,
+        ).pack(anchor="w", padx=(22, 0))
+
         tk.Frame(content, bg=DLG_LINE, height=1).pack(fill="x", pady=6)
         self._label(
             content,
@@ -938,7 +964,12 @@ class ConfigDialog(tk.Toplevel):
         theme_key = self._theme_var.get()
         self._closed = True
         try:
-            self._on_save(tuple(events), alert_seconds, theme_key)
+            self._on_save(
+                tuple(events),
+                alert_seconds,
+                theme_key,
+                bool(self._autostart_var.get()),
+            )
         finally:
             self.destroy()
 
@@ -1029,6 +1060,9 @@ class AlarmApp:
                 ("sound", "missing"),
                 f"未找到铃声文件或系统不支持播放：{SOUND_FILE}",
             )
+
+        # 每次启动都按配置同步启动项，程序升级或移动后路径自动修正。
+        self._apply_autostart(self.config.autostart)
 
         self.cycle.tick(self._t0)
         self._after_id = self.root.after(20, self._tick)
@@ -1265,6 +1299,7 @@ class AlarmApp:
             events=self.cycle.events,
             alert_seconds=self.cycle.alert_seconds,
             theme=self.renderer.theme.key,
+            autostart_enabled=self.config.autostart,
             anchor=self._dialog_anchor,
             on_save=self._apply_settings,
             on_cancel=self._cancel_settings,
@@ -1273,7 +1308,13 @@ class AlarmApp:
         )
         self._dialog.show_page(page)
 
-    def _apply_settings(self, events, alert_seconds: int, theme_key: str) -> None:
+    def _apply_settings(
+        self,
+        events,
+        alert_seconds: int,
+        theme_key: str,
+        autostart_enabled: bool,
+    ) -> None:
         self._dialog = None
         if self._alert_active:
             self._end_alert()
@@ -1286,8 +1327,16 @@ class AlarmApp:
         if target.key != self.renderer.theme.key:
             self._rebuild_theme(target.key)
         self.config.theme = self.renderer.theme.key
+        self.config.autostart = bool(autostart_enabled)
+        self._apply_autostart(self.config.autostart)
         self._saved_theme_key = self.renderer.theme.key
         self._save_quiet()
+
+    def _apply_autostart(self, enabled: bool) -> None:
+        try:
+            autostart.set_enabled(enabled)
+        except OSError as exc:
+            self._warn(("autostart", str(exc)), f"更新开机启动项失败：{exc}")
 
     def _cancel_settings(self) -> None:
         self._dialog = None
